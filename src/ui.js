@@ -299,7 +299,14 @@ export function openArchive(container, records, handlers) {
     <p class="soft" style="font-family:var(--font-poetic);font-style:italic;margin:0 0 0.4rem">Everything you have carried here.</p>
     <input class="archive-search field" id="a-search" type="text" placeholder="Find a memory" />
     <div class="archive-filters" id="a-filters"></div>
-    <div class="archive-grid" id="a-grid"></div>`;
+    <div class="archive-grid" id="a-grid"></div>
+    <div class="archive-foot">
+      <button class="btn-ghost keepsake-btn" id="a-keepsake" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+        Keep a picture of the garden
+      </button>
+      <span class="soft keepsake-hint">A parchment image of every memory, saved to this device.</span>
+    </div>`;
 
   const close = el('button', 'close-x', '&times;');
   close.style.position = 'absolute'; close.style.top = '18px'; close.style.right = '20px';
@@ -353,6 +360,18 @@ export function openArchive(container, records, handlers) {
       grid.appendChild(cell);
     });
   }
+
+  const keep = card.querySelector('#a-keepsake');
+  keep.onclick = async () => {
+    if (!records.length) return;
+    keep.disabled = true;
+    const label = keep.childNodes[keep.childNodes.length - 1];
+    label.textContent = ' Gathering the garden…';
+    try { await handlers.onKeepsake(); label.textContent = ' The picture is yours.'; }
+    catch { label.textContent = ' The picture could not be gathered.'; }
+    setTimeout(() => { label.textContent = ' Keep a picture of the garden'; keep.disabled = false; }, 2600);
+  };
+  if (!records.length) keep.disabled = true;
 
   renderGrid();
   container.innerHTML = '';

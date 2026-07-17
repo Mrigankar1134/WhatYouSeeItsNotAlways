@@ -438,6 +438,18 @@ body.high-contrast #grade { opacity: 0.35; }
 .pressed .p-title { font-family: var(--font-poetic); font-size: 1.1rem; color: var(--ink); line-height: 1.25; }
 .pressed .p-date { font-family: var(--font-hand); font-size: 0.95rem; color: var(--faded-ink); margin-top: 4px; }
 .archive-empty { text-align: center; padding: 3rem 1rem; font-family: var(--font-poetic); font-style: italic; font-size: 1.3rem; color: var(--faded-ink); }
+.archive-foot {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin-top: 1.6rem; padding-top: 1.2rem;
+  border-top: 1px solid rgba(74,52,39,0.12);
+}
+.keepsake-btn { display: inline-flex; align-items: center; gap: 10px; }
+.keepsake-btn svg {
+  width: 18px; height: 18px; fill: none; stroke: currentColor;
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+.keepsake-btn:disabled { opacity: 0.5; cursor: default; }
+.keepsake-hint { font-size: 0.78rem; font-style: italic; }
 
 /* ---------------- How to play ---------------- */
 .howto-card { width: min(640px, 100%); }

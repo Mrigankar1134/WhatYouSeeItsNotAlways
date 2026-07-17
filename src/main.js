@@ -5,6 +5,7 @@ import * as UI from './ui.js';
 import { COPY, ZONES, EMOTIONS } from './config.js';
 import { allMemories, putMemory, deleteMemory, newId, loadPrefs, savePrefs } from './db.js';
 import { exportSeed, readSeed, restoreSeed } from './seed.js';
+import { downloadKeepsake } from './keepsake.js';
 import { remoteSave, remoteDelete, remoteAll, remotePlayer } from './api.js';
 
 const $ = (s) => document.querySelector(s);
@@ -195,6 +196,8 @@ function onZoneChange(id) {
   const zone = ZONES.find((z) => z.id === id);
   buildWayfinder();
   if (!zone) return;
+  clearWhisper(); // the previous place's words leave with the place
+  if (id !== 'meadow') state.meadowShown = false; // turning back re-arms the meadow
   if (id === 'bench') { showPrompt('Sit for a while', true, sit); }
   else if (id === 'bridge') { hidePrompt(); showBridge(); }
   else if (id === 'meadow') { hidePrompt(); showMeadow(); }
@@ -208,40 +211,55 @@ function pickWeather(zoneId) {
   return Math.random() < 0.25 ? 'mist' : 'clear';
 }
 
+// One place's words at a time: every whisper is tracked so entering a new
+// zone can fade the previous zone's text out immediately.
+let whisperTimers = [];
+function whisperLater(fn, ms) { whisperTimers.push(setTimeout(fn, ms)); }
+function clearWhisper() {
+  whisperTimers.forEach(clearTimeout);
+  whisperTimers = [];
+  const old = [...dom.whisper.children];
+  old.forEach((n) => n.classList.remove('show'));
+  setTimeout(() => old.forEach((n) => n.remove()), 800);
+}
+
 function whisper(zone) {
-  dom.whisper.innerHTML = '';
+  clearWhisper();
   const t = document.createElement('p'); t.className = 'w-title w-item'; t.textContent = zone.title;
   const s = document.createElement('p'); s.className = 'w-sub w-item'; s.textContent = zone.sub;
   dom.whisper.appendChild(t); dom.whisper.appendChild(s);
-  requestAnimationFrame(() => { t.classList.add('show'); setTimeout(() => s.classList.add('show'), 400); });
-  setTimeout(() => { t.classList.remove('show'); s.classList.remove('show'); }, 5200);
+  requestAnimationFrame(() => { t.classList.add('show'); whisperLater(() => s.classList.add('show'), 400); });
+  whisperLater(() => { t.classList.remove('show'); s.classList.remove('show'); }, 5200);
 }
 
 function showBridge() {
-  if (state.bridgeShown) return; state.bridgeShown = true;
-  dom.whisper.innerHTML = '';
+  clearWhisper();
   const p = document.createElement('p'); p.className = 'w-title w-item'; p.style.fontStyle = 'italic';
   p.textContent = 'Some roads remain unfinished.';
   dom.whisper.appendChild(p);
   requestAnimationFrame(() => p.classList.add('show'));
-  setTimeout(() => {
-    p.textContent = 'Not every unfinished road is a failure.';
-  }, 5000);
-  setTimeout(() => p.classList.remove('show'), 9000);
+  if (!state.bridgeShown) {
+    // the quiet reassurance is spoken only once
+    state.bridgeShown = true;
+    whisperLater(() => { p.textContent = 'Not every unfinished road is a failure.'; }, 5000);
+    whisperLater(() => p.classList.remove('show'), 9000);
+  } else {
+    whisperLater(() => p.classList.remove('show'), 5200);
+  }
 }
 
 function showMeadow() {
-  if (state.meadowShown) return; state.meadowShown = true;
-  dom.whisper.innerHTML = '';
+  if (state.meadowShown || state.returning) return; state.meadowShown = true;
+  clearWhisper();
   const lines = ['Some stories don’t end.', 'They simply stop being written.', 'That doesn’t make them any less beautiful.'];
   lines.forEach((text, i) => {
     const p = document.createElement('p'); p.className = 'w-title w-item';
     p.style.fontSize = 'clamp(1.4rem,2.4vw,2.2rem)';
     dom.whisper.appendChild(p); p.textContent = text;
-    setTimeout(() => p.classList.add('show'), 800 + i * 1400);
+    whisperLater(() => p.classList.add('show'), 800 + i * 1400);
   });
   // fade to warm white, return to entrance
-  setTimeout(returnToEntrance, 8000);
+  whisperTimers.push(setTimeout(returnToEntrance, 8000));
 }
 
 function returnToEntrance() {
@@ -253,7 +271,7 @@ function returnToEntrance() {
   setTimeout(() => {
     world.travel = 0; world.targetTravel = ZONES[1].t; world.travelVel = 0;
     world.setTimeMs(world.timeMs + world.dayLength * 0.28); // later time of day
-    dom.whisper.innerHTML = '';
+    clearWhisper();
     const p = document.createElement('p'); p.className = 'w-sub w-item';
     p.textContent = COPY.remain; dom.whisper.appendChild(p);
     requestAnimationFrame(() => p.classList.add('show'));
@@ -278,7 +296,7 @@ function sit() {
   dom.topbar.classList.add('hidden');
   dom.wayfinder.classList.add('hidden');
   hidePrompt();
-  dom.whisper.innerHTML = '';
+  clearWhisper();
   clearTimeout(state.benchTimer);
   state.benchTimer = setTimeout(() => {
     const stand = () => { showPrompt('Stand and continue', true, standUp); };
@@ -331,12 +349,12 @@ async function submitMemory(data) {
   // ceremony — ease the camera toward the soil, then plant
   world.approach(spot.pos);
   world.plantMemory(rec, () => {
-    dom.whisper.innerHTML = '';
+    clearWhisper();
     const p = document.createElement('p'); p.className = 'w-title w-item';
     p.textContent = rec.title; p.style.fontSize = 'clamp(1.4rem,2.4vw,2rem)';
     dom.whisper.appendChild(p);
     requestAnimationFrame(() => p.classList.add('show'));
-    setTimeout(() => p.classList.remove('show'), 3000);
+    whisperLater(() => p.classList.remove('show'), 3000);
     announce(COPY.taken);
   });
 }
@@ -381,6 +399,10 @@ function openArchive() {
   UI.openArchive(dom.archive, state.memories, {
     onClose: () => { UI.closeDialog(dom.archive); state.dialogOpen = false; },
     onPick: (rec) => { UI.closeDialog(dom.archive); openMemory(rec); },
+    onKeepsake: async () => {
+      await downloadKeepsake(state.memories, state.playerName || state.prefs.playerName);
+      announce('The picture of the garden has been saved to this device.');
+    },
   });
 }
 
@@ -550,13 +572,13 @@ function maybeFragment() {
   const rec = state.memories[Math.floor(Math.random() * state.memories.length)];
   if (rec.privacyMode === 'private-reflection') return;
   setTimeout(() => {
-    dom.whisper.innerHTML = '';
+    clearWhisper();
     const p = document.createElement('p'); p.className = 'w-sub w-item';
     const frag = (rec.story || rec.title || '').split('.')[0].slice(0, 80);
     p.textContent = '“' + frag + '”';
     dom.whisper.appendChild(p);
     requestAnimationFrame(() => p.classList.add('show'));
-    setTimeout(() => p.classList.remove('show'), 3500);
+    whisperLater(() => p.classList.remove('show'), 3500);
   }, 900);
 }
 
