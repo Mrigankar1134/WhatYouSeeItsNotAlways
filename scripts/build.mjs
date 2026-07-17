@@ -22,7 +22,7 @@ const REQUIRED = [
   'vendor/three.module.js',
 ];
 
-const COPY = ['index.html', 'styles.css', 'src', 'vendor', 'assets'];
+const COPY = ['index.html', 'cards.html', 'styles.css', 'src', 'vendor', 'assets'];
 
 let failed = false;
 const fail = (msg) => { failed = true; console.error('  ✗ ' + msg); };
