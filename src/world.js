@@ -931,11 +931,12 @@ export class World {
       this.camGroup.position.lerp(p, 1 - Math.exp(-dt / 0.28));
       // look a little further along the path
       const ahead = this.pathCurve.getPointAt(Math.min(1, this.travel + 0.04));
-      // portrait screens step the camera back so scenes stay fully framed —
-      // strongest at the gate, easing off along the walk
+      // portrait screens step the camera back so scenes stay fully framed.
+      // The horizontal FOV shrinks with aspect, so near the gate (whose span
+      // exceeds the portrait frustum at close range) the pull-back is large.
       const portrait = Math.max(0, 1 - this.camera.aspect);
-      const backoff = portrait * (1.1 + 2.8 * Math.max(0, 1 - this.travel * 7));
-      this.camera.position.set(0, portrait * 0.25, backoff);
+      const backoff = portrait * (1.3 + 11 * Math.max(0, 1 - this.travel * 5));
+      this.camera.position.set(0, portrait * 0.3, backoff);
       this._camLookAt(new THREE.Vector3(ahead.x, ahead.y - 0.2, ahead.z));
     }
 
@@ -1034,7 +1035,7 @@ export class World {
     this.camera.aspect = aspect;
     // portrait phones see a narrow slice of the world — widen the view so the
     // gate, canopy and horizon still compose like the desktop frame
-    this.camera.fov = aspect < 1 ? THREE.MathUtils.lerp(62, 46, aspect) : 42;
+    this.camera.fov = aspect < 1 ? THREE.MathUtils.lerp(66, 47, aspect) : 42;
     this.camera.updateProjectionMatrix();
   }
 }

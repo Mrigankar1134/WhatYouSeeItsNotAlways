@@ -221,6 +221,13 @@ body.high-contrast #grade { opacity: 0.35; }
 }
 .whisper .w-item { opacity: 0; transform: translateY(8px); transition: opacity 1.6s var(--ease-soft), transform 1.6s var(--ease-soft); }
 .whisper .w-item.show { opacity: 1; transform: translateY(0); }
+/* passing through quickly — names arrive and leave at the visitor's pace */
+.whisper .w-item.quick {
+  transition: opacity 0.35s var(--ease-ui), transform 0.35s var(--ease-ui);
+  font-size: clamp(1.3rem, 2.4vw, 2.2rem);
+  opacity: 0; transform: translateY(14px);
+}
+.whisper .w-item.quick.show { opacity: 0.88; transform: translateY(0); }
 
 .prompt {
   position: fixed; left: 50%; bottom: 16%;

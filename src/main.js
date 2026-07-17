@@ -208,16 +208,22 @@ function enterGarden() {
 }
 
 // ---------------------------------------------------------------- zones
+let lastZoneAt = 0;
 function onZoneChange(id) {
   const zone = ZONES.find((z) => z.id === id);
   buildWayfinder();
   if (!zone) return;
+  // rushing through? words come and go at the visitor's pace — a zone is
+  // "passed through" when there is still far to travel beyond it
+  const fast = performance.now() - lastZoneAt < 2600
+    || Math.abs(world.targetTravel - world.travel) > 0.09;
+  lastZoneAt = performance.now();
   clearWhisper(); // the previous place's words leave with the place
   if (id !== 'meadow') state.meadowShown = false; // turning back re-arms the meadow
   if (id === 'bench') { showPrompt('Sit for a while', true, sit); }
-  else if (id === 'bridge') { hidePrompt(); showBridge(); }
+  else if (id === 'bridge') { hidePrompt(); showBridge(fast); }
   else if (id === 'meadow') { hidePrompt(); showMeadow(); }
-  else { hidePrompt(); if (zone.title) whisper(zone); }
+  else { hidePrompt(); if (zone.title) whisper(zone, fast); }
   // no hover on touch — whisper what a fingertip can do here
   if (isTouch) {
     if (id === 'garden') showPrompt('Tap the glowing soil to plant a memory', false, null, 5000);
@@ -241,24 +247,34 @@ function clearWhisper() {
   whisperTimers = [];
   const old = [...dom.whisper.children];
   old.forEach((n) => n.classList.remove('show'));
-  setTimeout(() => old.forEach((n) => n.remove()), 800);
+  // quick items step aside almost immediately; slow ones dissolve
+  const wait = old.some((n) => n.classList.contains('quick')) ? 380 : 800;
+  setTimeout(() => old.forEach((n) => n.remove()), wait);
 }
 
-function whisper(zone) {
+function whisper(zone, fast = false) {
   clearWhisper();
-  const t = document.createElement('p'); t.className = 'w-title w-item'; t.textContent = zone.title;
+  const t = document.createElement('p'); t.className = 'w-title w-item' + (fast ? ' quick' : ''); t.textContent = zone.title;
+  dom.whisper.appendChild(t);
+  if (fast) {
+    // passing through quickly — just the name, briefly, keeping the pace
+    requestAnimationFrame(() => t.classList.add('show'));
+    whisperLater(() => t.classList.remove('show'), 1500);
+    return;
+  }
   const s = document.createElement('p'); s.className = 'w-sub w-item'; s.textContent = zone.sub;
-  dom.whisper.appendChild(t); dom.whisper.appendChild(s);
+  dom.whisper.appendChild(s);
   requestAnimationFrame(() => { t.classList.add('show'); whisperLater(() => s.classList.add('show'), 400); });
   whisperLater(() => { t.classList.remove('show'); s.classList.remove('show'); }, 5200);
 }
 
-function showBridge() {
+function showBridge(fast = false) {
   clearWhisper();
-  const p = document.createElement('p'); p.className = 'w-title w-item'; p.style.fontStyle = 'italic';
+  const p = document.createElement('p'); p.className = 'w-title w-item' + (fast ? ' quick' : ''); p.style.fontStyle = 'italic';
   p.textContent = 'Some roads remain unfinished.';
   dom.whisper.appendChild(p);
   requestAnimationFrame(() => p.classList.add('show'));
+  if (fast) { whisperLater(() => p.classList.remove('show'), 1500); return; }
   if (!state.bridgeShown) {
     // the quiet reassurance is spoken only once
     state.bridgeShown = true;
