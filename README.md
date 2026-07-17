@@ -12,17 +12,43 @@ code — so there are no external assets to download and nothing leaves your dev
 
 ## Running it
 
-Because it uses ES modules, it must be served over HTTP (not opened as a `file://`):
+**With the memory database** (Neon Postgres — memories, player name and preferences sync up):
 
 ```bash
-# from the project root — any static server works
-python -m http.server 8123
-# then open http://localhost:8123
+# .env must contain DATABASE_URL
+npm start          # serves the app + /api at http://localhost:8123
 ```
 
-Or with Node: `npx serve .`
+**Static only** — the app is local-first, so any static server works and everything
+still functions (sync quietly stays local):
+
+```bash
+python -m http.server 8123   # or: npx serve .
+```
 
 A modern browser with WebGL2 is recommended. Audio begins only after you consent on the first screen.
+
+## Deploying (AWS Amplify or any static host)
+
+`amplify.yml` is included. The build runs `node scripts/build.mjs`, which verifies the
+module graph, import map and asset references, then stages a clean copy in `dist/` —
+no npm install required. Point any other host at the same script:
+
+```bash
+npm run build      # verify + stage dist/
+```
+
+The static deploy has no `/api`, so the garden runs fully local-first there. To keep the
+database sync, host `server.mjs` (with `DATABASE_URL`) on any Node-capable service and
+serve the same files from it.
+
+## The keepsake
+
+The Garden Journal can gather every planted memory into a single parchment PNG —
+painted on-device with canvas, downloaded, never uploaded. A draft made with sample
+memories:
+
+![Keepsake sample](assets/keepsake-sample.png)
 
 ## What's inside
 

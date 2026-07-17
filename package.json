@@ -4,7 +4,10 @@
   "description": "> *“Some people don't stay forever. Some never become ours. Yet somehow… they still become part of who we are.”*",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --env-file=.env server.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs"
   },
   "repository": {
     "type": "git",

@@ -189,6 +189,15 @@ function enterGarden() {
   } else {
     setTimeout(() => whisper(ZONES[1]), 2600);
   }
+  // first time through the gate, offer the quiet guide once
+  if (!state.prefs.howtoSeen) {
+    setTimeout(() => {
+      if (state.dialogOpen || state.benchMode) return;
+      state.prefs.howtoSeen = true;
+      persistPrefs();
+      openHowTo();
+    }, name ? 6200 : 4200);
+  }
 }
 
 // ---------------------------------------------------------------- zones

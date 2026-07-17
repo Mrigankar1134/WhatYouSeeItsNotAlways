@@ -1,0 +1,16 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        # Buildless ES-module app — no npm install needed for the static build.
+        # The script verifies the module graph and asset references, then
+        # stages everything in dist/. Without the optional Node API the app
+        # runs fully local-first (IndexedDB), so static hosting is supported.
+        - node scripts/build.mjs
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths: []
