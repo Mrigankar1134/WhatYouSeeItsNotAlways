@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The Garden Beyond Seasons</title>
+  <meta name="description" content="A cinematic, local-first memory sanctuary." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&family=Caveat:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <!-- WebGL world -->
+  <canvas id="scene"></canvas>
+
+  <!-- Colour grade / vignette overlay -->
+  <div id="grade" aria-hidden="true"></div>
+
+  <!-- Loading veil -->
+  <div id="loader" class="veil" role="status" aria-live="polite">
+    <div class="loader-pollen" aria-hidden="true"></div>
+    <p class="loader-text">The garden is waking.</p>
+    <p class="sr-only" id="loader-progress">Preparing the garden.</p>
+  </div>
+
+  <!-- Opening cinematic text -->
+  <div id="opening" class="veil hidden" aria-hidden="true">
+    <div class="opening-lines">
+      <p class="line">Nothing inside asks you to stay.</p>
+      <p class="line">Nothing inside asks you to leave.</p>
+      <p class="line">It simply remembers.</p>
+    </div>
+    <button id="enter-cue" class="enter-cue" type="button">
+      <span class="enter-word">Scroll to enter</span>
+      <span class="enter-stem" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <!-- First-run consent -->
+  <div id="firstrun" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="fr-title">
+    <div class="parchment firstrun-card">
+      <h1 id="fr-title" class="poetic">Before you enter</h1>
+      <p class="soft">A few quiet choices. Nothing is remembered about you — only what you plant.</p>
+      <label class="switch">
+        <input type="checkbox" id="fr-sound" checked />
+        <span>Begin with sound</span>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="fr-motion" />
+        <span>Reduce motion</span>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="fr-remember" checked />
+        <span>Remember where the garden was left</span>
+      </label>
+      <button id="fr-begin" class="btn-primary" type="button">Enter the garden</button>
+    </div>
+  </div>
+
+  <!-- Contextual world text (location titles, whispers) -->
+  <div id="whisper" class="whisper" aria-live="polite"></div>
+
+  <!-- Scene hint / prompt -->
+  <div id="prompt" class="prompt hidden" role="status"></div>
+
+  <!-- Corner controls -->
+  <nav id="controls" class="controls hidden" aria-label="Garden controls">
+    <button class="glyph" id="ctl-sound" title="Sound" aria-label="Toggle sound">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8c1.6 1.6 1.6 6.4 0 8"/></svg>
+    </button>
+    <button class="glyph" id="ctl-journal" title="Garden journal" aria-label="Open garden journal">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h11a2 2 0 0 1 2 2v14l-6-3-6 3V6a2 2 0 0 1 2-2z" fill="none"/><path d="M12 8v6M9 11h6" /></svg>
+    </button>
+    <button class="glyph" id="ctl-access" title="Comfort & access" aria-label="Open comfort and accessibility settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="2.4"/><path d="M12 10v8M7 13h10M9 20l3-3 3 3"/></svg>
+    </button>
+  </nav>
+
+  <!-- Minimap of zones -->
+  <div id="wayfinder" class="wayfinder hidden" aria-hidden="true"></div>
+
+  <!-- Memory journal (plant/edit) -->
+  <div id="journal" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="j-title"></div>
+
+  <!-- Memory viewer -->
+  <div id="viewer" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="v-title"></div>
+
+  <!-- Archive overview -->
+  <div id="archive" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="a-title"></div>
+
+  <!-- Accessibility panel -->
+  <div id="access" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="ac-title"></div>
+
+  <div class="sr-only" id="live" aria-live="polite"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
