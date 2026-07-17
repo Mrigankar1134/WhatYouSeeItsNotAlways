@@ -34,8 +34,13 @@ function trap(container, onEscape) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   };
   document.addEventListener('keydown', trapHandler);
-  const first = focusables()[0];
-  if (first) setTimeout(() => first.focus(), 60);
+  // touching the dark garden above a sheet closes it, like letting go
+  container.onpointerdown = (e) => { if (e.target === container && onEscape) onEscape(); };
+  // desktop only: focusing the first field on touch would pop the keyboard
+  if (!matchMedia('(pointer:coarse)').matches) {
+    const first = focusables()[0];
+    if (first) setTimeout(() => first.focus(), 60);
+  }
 }
 function release() { if (trapHandler) document.removeEventListener('keydown', trapHandler); trapHandler = null; }
 

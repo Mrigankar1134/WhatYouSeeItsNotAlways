@@ -911,8 +911,9 @@ export class World {
     if (this.benchOn) {
       // hold near the bench viewpoint
     } else {
-      // critically-damped, framerate-independent easing toward the target
-      const k = 1 - Math.exp(-dt / 0.62);
+      // critically-damped, framerate-independent easing toward the target —
+      // a long time-constant makes travel glide rather than step
+      const k = 1 - Math.exp(-dt / 1.05);
       this.travel = THREE.MathUtils.clamp(this.travel + (this.targetTravel - this.travel) * k, 0, 1);
     }
     const nowZone = this.currentZoneId();
@@ -930,7 +931,11 @@ export class World {
       this.camGroup.position.lerp(p, 1 - Math.exp(-dt / 0.28));
       // look a little further along the path
       const ahead = this.pathCurve.getPointAt(Math.min(1, this.travel + 0.04));
-      this.camera.position.set(0, 0, 0);
+      // portrait screens step the camera back so scenes stay fully framed —
+      // strongest at the gate, easing off along the walk
+      const portrait = Math.max(0, 1 - this.camera.aspect);
+      const backoff = portrait * (1.1 + 2.8 * Math.max(0, 1 - this.travel * 7));
+      this.camera.position.set(0, portrait * 0.25, backoff);
       this._camLookAt(new THREE.Vector3(ahead.x, ahead.y - 0.2, ahead.z));
     }
 
@@ -1025,7 +1030,11 @@ export class World {
     this.renderer.setSize(w, h, false);
     if (this.composer) this.composer.setSize(w, h);
     if (this.bloom) this.bloom.setSize(w, h);
-    this.camera.aspect = w / h;
+    const aspect = w / h;
+    this.camera.aspect = aspect;
+    // portrait phones see a narrow slice of the world — widen the view so the
+    // gate, canopy and horizon still compose like the desktop frame
+    this.camera.fov = aspect < 1 ? THREE.MathUtils.lerp(62, 46, aspect) : 42;
     this.camera.updateProjectionMatrix();
   }
 }

@@ -174,6 +174,32 @@ body.high-contrast #grade { opacity: 0.35; }
 }
 @keyframes stem { 0%,100%{ transform: scaleY(.4); opacity:.4;} 50%{ transform: scaleY(1); opacity:.9;} }
 
+/* swipe-direction hint — three chevrons rise beside the cue for the first
+   moments on touch, showing which way to swipe */
+.swipe-arrow {
+  position: absolute; left: 50%; bottom: calc(12% + 96px);
+  transform: translateX(-50%);
+  display: none; flex-direction: column; gap: 7px;
+  pointer-events: none;
+}
+.swipe-arrow.show { display: flex; }
+.swipe-arrow i {
+  width: 15px; height: 15px;
+  border-top: 2.5px solid var(--sunrise-cream);
+  border-left: 2.5px solid var(--sunrise-cream);
+  border-radius: 2px;
+  transform: rotate(45deg);
+  opacity: 0.2;
+  animation: chevRise 1.25s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(242,216,174,0.5));
+}
+.swipe-arrow i:nth-child(2) { animation-delay: 0.16s; }
+.swipe-arrow i:nth-child(3) { animation-delay: 0.32s; }
+@keyframes chevRise {
+  0%, 100% { opacity: 0.12; transform: rotate(45deg) translate(3px, 3px); }
+  40%      { opacity: 1;    transform: rotate(45deg) translate(-3px, -3px); }
+}
+
 /* ---------------- Whispers / prompts ---------------- */
 .whisper {
   position: fixed; left: 50%; top: 22%;
@@ -278,6 +304,8 @@ body.high-contrast #grade { opacity: 0.35; }
 @keyframes scrimOut { to { opacity: 0; } }
 .dialog-scrim.closing .parchment { animation: cardOut 0.34s var(--ease-soft) forwards; }
 @keyframes cardOut { to { opacity: 0; transform: translateY(10px) scale(0.99); } }
+@keyframes sheetIn { from { transform: translateY(56px); opacity: 0.3; } to { transform: none; opacity: 1; } }
+@keyframes sheetOut { to { transform: translateY(70px); opacity: 0; } }
 
 .parchment {
   position: relative;
@@ -491,18 +519,42 @@ button, .chip, .pressed, .emotion, .switch, .prompt.act { touch-action: manipula
   .glyph { width: 50px; height: 50px; }
   .close-x { padding: 12px; font-size: 1.7rem; }
   .chip { padding: 9px 16px; }
+  .switch { padding: 14px 6px; }
+  .switch input { width: 22px; height: 22px; }
+  .field input[type=text], .field textarea, .field select, .fr-name-field input { padding: 14px; font-size: 1rem; }
+  .slider-row input[type=range] { height: 34px; }
+  .btn-primary, .btn-ghost, .btn-danger { height: 52px; }
+  .emotion { padding: 16px 8px; }
+  .pressed { padding: 18px 14px; }
 }
 
 @media (max-width: 640px) {
   .emotions { grid-template-columns: repeat(2, 1fr); }
-  .parchment {
-    padding: 24px 20px; border-radius: 4px; max-height: 100dvh;
-    padding-top: max(24px, env(safe-area-inset-top));
-    padding-bottom: max(28px, env(safe-area-inset-bottom));
+
+  /* dialogs become bottom sheets that glide up from the soil */
+  .dialog-scrim:not(#firstrun) { padding: 0; align-items: flex-end; }
+  .dialog-scrim:not(#firstrun) .parchment {
+    width: 100%; max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+    padding: 26px 20px calc(26px + env(safe-area-inset-bottom));
+    animation: sheetIn 0.6s var(--ease-ui);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
-  .dialog-scrim { padding: 0; }
-  .journal-card, .viewer-card, .archive-card, .access-card, .howto-card { width: 100%; min-height: 100dvh; border-radius: 0; }
-  .firstrun-card { max-width: min(460px, calc(100vw - 32px)); border-radius: 6px; min-height: 0; }
+  /* grab-handle in place of the top botanical mark */
+  .dialog-scrim:not(#firstrun) .parchment::before {
+    top: 9px; left: 50%; width: 44px; height: 4px;
+    transform: translateX(-50%); border-radius: 2px;
+    background: rgba(74,52,39,0.28); opacity: 1;
+  }
+  .dialog-scrim.closing:not(#firstrun) .parchment { animation: sheetOut 0.32s var(--ease-soft) forwards; }
+  .journal-card, .viewer-card, .archive-card, .access-card, .howto-card { width: 100%; }
+
+  #firstrun { padding: 16px; }
+  .firstrun-card {
+    max-width: min(460px, calc(100vw - 32px)); border-radius: 8px;
+    max-height: calc(100dvh - 32px); padding: 26px 22px;
+  }
   .whisper { top: 18%; max-width: 92vw; }
   .prompt { bottom: calc(13% + env(safe-area-inset-bottom)); letter-spacing: 0.22em; padding-left: 0.22em; max-width: 88vw; text-align: center; }
   .wayfinder .wf-name { min-width: 0; font-size: 0.62rem; }

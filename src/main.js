@@ -141,9 +141,16 @@ function startOpeningCinematic(skippable) {
 
 function showEnterCue() {
   dom.enterCue.classList.add('show');
+  const coarse = matchMedia('(pointer:coarse)').matches;
   const word = dom.enterCue.querySelector('.enter-word');
-  word.textContent = matchMedia('(pointer:coarse)').matches ? COPY.enterSwipe : COPY.enterScroll;
+  word.textContent = coarse ? COPY.enterSwipe : COPY.enterScroll;
   dom.enterCue.onclick = enterGarden;
+  // on touch, show which way to swipe for the first moments
+  if (coarse) {
+    const arrow = $('#swipe-arrow');
+    arrow.classList.add('show');
+    setTimeout(() => arrow.classList.remove('show'), 3200);
+  }
   // the cue promises "scroll to enter" — honour scroll, swipe and keys too
   const enterOnce = () => { if (!state.dialogOpen) enterGarden(); };
   window.addEventListener('wheel', enterOnce, { once: true, passive: true });
@@ -526,14 +533,22 @@ function setupInput() {
     world.nudgeTravel(e.deltaY * 0.00024);
   }, { passive: true });
 
-  // touch travel
-  let touchY = null;
-  window.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+  // touch travel — direct drag while touching, a soft glide on release
+  let touchY = null, flickDy = 0, flickT = 0;
+  window.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; flickDy = 0; }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (touchY == null || !state.entered || state.dialogOpen || state.benchMode || state.paused) return;
     const dy = touchY - e.touches[0].clientY;
-    world.nudgeTravel(dy * 0.0008);
+    world.nudgeTravel(dy * 0.001);
+    flickDy = dy; flickT = performance.now();
     touchY = e.touches[0].clientY;
+  }, { passive: true });
+  window.addEventListener('touchend', () => {
+    if (!state.entered || state.dialogOpen || state.benchMode || state.paused) { touchY = null; return; }
+    if (performance.now() - flickT < 90) {
+      world.nudgeTravel(Math.max(-0.06, Math.min(0.06, flickDy * 0.004)));
+    }
+    touchY = null;
   }, { passive: true });
 
   // click / tap to interact
