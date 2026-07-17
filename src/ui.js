@@ -50,6 +50,42 @@ export function closeDialog(node) {
 }
 
 // =====================================================================
+// HOW TO PLAY
+// =====================================================================
+export function openHowTo(container, handlers) {
+  const card = el('div', 'parchment howto-card');
+  card.innerHTML = `
+    <div class="journal-head">
+      <div>
+        <p class="viewer-eyebrow">A quiet guide</p>
+        <h2 id="h-title">How to wander</h2>
+        <p>There is nothing to win here. Only a place to walk through.</p>
+      </div>
+      <button class="close-x" aria-label="Close guide">×</button>
+    </div>
+    <ul class="howto-list">
+      <li><span class="howto-act">Walk the path</span> Scroll, swipe, or press <kbd>W</kbd>/<kbd>S</kbd> or the arrow keys to drift forward and back.</li>
+      <li><span class="howto-act">Plant a memory</span> In the Memory Garden, bare patches of soil glow softly. Click one and the journal opens.</li>
+      <li><span class="howto-act">Revisit a memory</span> Click any flower you have planted. Each emotion grows its own kind of bloom.</li>
+      <li><span class="howto-act">Touch the pond</span> Tap the water for ripples. Sometimes a fragment of a memory rises to the surface.</li>
+      <li><span class="howto-act">Sit for a while</span> The bench asks nothing of you. The interface steps away and the garden simply continues.</li>
+      <li><span class="howto-act">The bridge</span> Some roads remain unfinished. It cannot be crossed — that is not a puzzle.</li>
+      <li><span class="howto-act">Leave through the meadow</span> Walk into the light at the far end. The garden remains, and so does everything planted.</li>
+    </ul>
+    <p class="access-section-title">Keys</p>
+    <p class="howto-keys">
+      <kbd>J</kbd> journal &nbsp; <kbd>M</kbd> sound &nbsp; <kbd>A</kbd> comfort &amp; access &nbsp; <kbd>H</kbd> this guide &nbsp; <kbd>Esc</kbd> close
+    </p>
+    <p class="privacy-note">Everything you plant stays in this garden. Nothing is scored, counted, or shared.</p>
+  `;
+  card.querySelector('.close-x').onclick = () => handlers.onClose();
+  container.innerHTML = '';
+  container.appendChild(card);
+  container.classList.remove('hidden');
+  trap(container, handlers.onClose);
+}
+
+// =====================================================================
 // JOURNAL (plant / edit)
 // =====================================================================
 export function openJournal(container, existing, handlers) {

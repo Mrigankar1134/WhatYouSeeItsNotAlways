@@ -87,8 +87,18 @@
     </button>
   </nav>
 
+  <!-- Help, top right -->
+  <nav id="topbar" class="controls top hidden" aria-label="Help">
+    <button class="glyph" id="ctl-help" title="How to play" aria-label="How to play">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.1 9.2a3 3 0 1 1 4.1 2.8c-.9.4-1.2 1.1-1.2 2.1" fill="none"/><circle cx="12" cy="17.6" r="0.7" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </nav>
+
   <!-- Minimap of zones -->
   <div id="wayfinder" class="wayfinder hidden" aria-hidden="true"></div>
+
+  <!-- How to play -->
+  <div id="howto" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="h-title"></div>
 
   <!-- Memory journal (plant/edit) -->
   <div id="journal" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="j-title"></div>

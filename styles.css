@@ -222,6 +222,10 @@ body.high-contrast #grade { opacity: 0.35; }
   opacity: 0.32; transition: opacity 0.8s var(--ease-soft);
 }
 .controls.awake { opacity: 0.92; }
+.controls.top {
+  top: max(24px, env(safe-area-inset-top));
+  bottom: auto;
+}
 .glyph {
   width: 46px; height: 46px; border-radius: 50%;
   border: 1px solid rgba(232,221,197,0.22);
@@ -434,6 +438,27 @@ body.high-contrast #grade { opacity: 0.35; }
 .pressed .p-title { font-family: var(--font-poetic); font-size: 1.1rem; color: var(--ink); line-height: 1.25; }
 .pressed .p-date { font-family: var(--font-hand); font-size: 0.95rem; color: var(--faded-ink); margin-top: 4px; }
 .archive-empty { text-align: center; padding: 3rem 1rem; font-family: var(--font-poetic); font-style: italic; font-size: 1.3rem; color: var(--faded-ink); }
+
+/* ---------------- How to play ---------------- */
+.howto-card { width: min(640px, 100%); }
+.howto-card h2 { font-family: var(--font-poetic); font-size: clamp(1.7rem, 3vw, 2.4rem); margin: 0.15em 0 0.1em; }
+.howto-card .journal-head p:last-child { font-family: var(--font-poetic); font-style: italic; color: var(--faded-ink); }
+.howto-list { list-style: none; padding: 0; margin: 0.4rem 0 0; }
+.howto-list li {
+  padding: 0.85rem 0; font-size: 0.94rem; line-height: 1.55; color: var(--ink);
+  border-bottom: 1px solid rgba(74,52,39,0.1);
+}
+.howto-list li:last-child { border-bottom: 0; }
+.howto-act {
+  display: block; font-family: var(--font-poetic); font-size: 1.15rem;
+  color: var(--soil-warm); margin-bottom: 2px;
+}
+kbd {
+  font-family: var(--font-ui); font-size: 0.75rem; color: var(--ink);
+  background: rgba(255,255,255,0.55); border: 1px solid rgba(74,52,39,0.3);
+  border-bottom-width: 2px; border-radius: 4px; padding: 2px 7px;
+}
+.howto-keys { color: var(--faded-ink); font-size: 0.88rem; line-height: 2.1; }
 
 /* ---------------- Access panel ---------------- */
 .access-card { width: min(560px, 100%); }

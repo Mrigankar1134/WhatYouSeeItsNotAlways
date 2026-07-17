@@ -16,6 +16,7 @@ const dom = {
   firstrun: $('#firstrun'), frSound: $('#fr-sound'), frMotion: $('#fr-motion'), frRemember: $('#fr-remember'), frBegin: $('#fr-begin'),
   whisper: $('#whisper'), prompt: $('#prompt'), controls: $('#controls'), wayfinder: $('#wayfinder'),
   journal: $('#journal'), viewer: $('#viewer'), archive: $('#archive'), access: $('#access'),
+  topbar: $('#topbar'), ctlHelp: $('#ctl-help'), howto: $('#howto'),
   grade: $('#grade'), live: $('#live'),
   ctlSound: $('#ctl-sound'), ctlJournal: $('#ctl-journal'), ctlAccess: $('#ctl-access'),
 };
@@ -142,6 +143,18 @@ function showEnterCue() {
   const word = dom.enterCue.querySelector('.enter-word');
   word.textContent = matchMedia('(pointer:coarse)').matches ? COPY.enterSwipe : COPY.enterScroll;
   dom.enterCue.onclick = enterGarden;
+  // the cue promises "scroll to enter" — honour scroll, swipe and keys too
+  const enterOnce = () => { if (!state.dialogOpen) enterGarden(); };
+  window.addEventListener('wheel', enterOnce, { once: true, passive: true });
+  window.addEventListener('touchmove', enterOnce, { once: true, passive: true });
+  const keyEnter = (e) => {
+    if (state.entered || state.dialogOpen) return;
+    if (['Enter', ' ', 'ArrowDown', 'ArrowUp', 'w', 's'].includes(e.key)) {
+      window.removeEventListener('keydown', keyEnter);
+      enterGarden();
+    }
+  };
+  window.addEventListener('keydown', keyEnter);
 }
 
 function enterGarden() {
@@ -164,6 +177,7 @@ function enterGarden() {
   // begin the walk
   world.setTargetTravel(ZONES[1].t);
   dom.controls.classList.remove('hidden');
+  dom.topbar.classList.remove('hidden');
   dom.wayfinder.classList.remove('hidden');
   buildWayfinder();
   wakeControls();
@@ -261,6 +275,7 @@ function sit() {
   world.benchFocus(true);
   audio.benchMode(true);
   dom.controls.classList.add('hidden');
+  dom.topbar.classList.add('hidden');
   dom.wayfinder.classList.add('hidden');
   hidePrompt();
   dom.whisper.innerHTML = '';
@@ -277,6 +292,7 @@ function standUp() {
   world.benchFocus(false);
   audio.benchMode(false);
   dom.controls.classList.remove('hidden');
+  dom.topbar.classList.remove('hidden');
   dom.wayfinder.classList.remove('hidden');
   hidePrompt();
   world.setTargetTravel(ZONES[5].t);
@@ -369,6 +385,14 @@ function openArchive() {
 }
 
 // ---------------------------------------------------------------- access
+function openHowTo() {
+  if (state.dialogOpen) return;
+  state.dialogOpen = true;
+  UI.openHowTo(dom.howto, {
+    onClose: () => { UI.closeDialog(dom.howto); state.dialogOpen = false; },
+  });
+}
+
 function openAccess() {
   state.dialogOpen = true;
   UI.openAccess(dom.access, state.prefs, {
@@ -427,9 +451,14 @@ function applyPrefs(p) {
 let idleTimer = null;
 function wakeControls() {
   dom.controls.classList.add('awake');
+  dom.topbar.classList.add('awake');
   dom.wayfinder.classList.add('awake');
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => { dom.controls.classList.remove('awake'); dom.wayfinder.classList.remove('awake'); }, 4000);
+  idleTimer = setTimeout(() => {
+    dom.controls.classList.remove('awake');
+    dom.topbar.classList.remove('awake');
+    dom.wayfinder.classList.remove('awake');
+  }, 4000);
 }
 
 function setupInput() {
@@ -478,6 +507,7 @@ function setupInput() {
       case 'j': openArchive(); break;
       case 'm': toggleSound(); break;
       case 'a': openAccess(); break;
+      case 'h': openHowTo(); break;
       case 'escape': if (state.benchMode) standUp(); break;
       case 'enter': case ' ': {
         if (world.hovered) handlePick(world.hovered);
@@ -489,6 +519,7 @@ function setupInput() {
   dom.ctlSound.onclick = toggleSound;
   dom.ctlJournal.onclick = openArchive;
   dom.ctlAccess.onclick = openAccess;
+  dom.ctlHelp.onclick = openHowTo;
 }
 
 function handlePick(hit) {

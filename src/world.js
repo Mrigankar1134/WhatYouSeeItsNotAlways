@@ -137,17 +137,7 @@ export class World {
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i), z = pos.getZ(i);
-      let h = Math.sin(x * 0.06) * Math.cos(z * 0.05) * 0.6
-            + Math.sin(x * 0.19 + 1.3) * 0.25
-            + Math.cos(z * 0.13) * 0.3;
-      // flatten a walkable corridor near x≈0
-      const corridor = Math.exp(-(x * x) / 40);
-      h *= (1 - corridor * 0.8);
-      // raise distant rim
-      const dist = Math.hypot(x, z);
-      if (dist > 60) h += (dist - 60) * 0.12;
-      pos.setY(i, h);
+      pos.setY(i, this.groundHeight(pos.getX(i), pos.getZ(i)));
     }
     geo.computeVertexNormals();
     const tex = this._groundTexture();
@@ -161,11 +151,20 @@ export class World {
     this._groundGeo = geo;
   }
 
+  // Single source of truth for terrain height — mesh, props and camera all use it.
   groundHeight(x, z) {
     let h = Math.sin(x * 0.06) * Math.cos(z * 0.05) * 0.6
           + Math.sin(x * 0.19 + 1.3) * 0.25 + Math.cos(z * 0.13) * 0.3;
     const corridor = Math.exp(-(x * x) / 40);
     h *= (1 - corridor * 0.8);
+    // distant rim of hills, carved open along the walking corridor toward the
+    // exit meadow so the far end of the path stays a bright valley, not a wall
+    const dist = Math.hypot(x, z);
+    if (dist > 60) {
+      const toMeadow = Math.min(1, Math.max(0, (-z - 40) / 20)); // 0 near garden, 1 past the bridge
+      const wide = Math.exp(-(x * x) / 160);                     // broader opening than the path itself
+      h += (dist - 60) * 0.12 * (1 - toMeadow * wide);
+    }
     return h;
   }
 
@@ -831,7 +830,7 @@ export class World {
 
     // fireflies + firefly-glow flowers at night
     this.fireflies.material.opacity = this.nightAmount * 0.9;
-    this.meadowGlow.material.opacity = 0.05 + day * 0.05;
+    this.meadowGlow.material.opacity = 0.22 + day * 0.3;
 
     this.emit('grade', { night: this.nightAmount, horizon: midCol });
   }
