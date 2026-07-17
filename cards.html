@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Garden Beyond Seasons — Story Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --night: #090D0B; --forest: #111713; --moss: #1E2B22; --ivy: #354A3A;
+    --sage: #7D8E78; --mist: #BCC5BD; --parchment: #E8DDC5; --parchment-l: #F3EBDD;
+    --soil: #4A3427; --soil-warm: #6B4934; --cream: #F2D8AE; --amber: #D99755;
+    --moon: #C6D0D5; --water: #263D43; --water-l: #79969C; --white: #F6F4EE;
+    --ink: #302B25; --faded: #6D6255;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --hand: 'Caveat', cursive;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: #141815;
+    font-family: var(--sans);
+    display: flex; flex-wrap: wrap; gap: 40px;
+    align-items: flex-start; justify-content: center;
+    padding: 48px 24px 80px;
+  }
+  .intro { width: 100%; text-align: center; color: var(--mist); margin-bottom: 8px; }
+  .intro h1 { font-family: var(--serif); font-weight: 500; font-size: 2rem; color: var(--white); }
+  .intro p { font-size: 0.85rem; opacity: 0.75; margin-top: 8px; line-height: 1.6; }
+  .intro .hand { font-family: var(--hand); font-size: 1.15rem; color: var(--cream); }
+
+  /* ------------------------------------------------ card shell (9:16) */
+  .card {
+    position: relative; width: 360px; height: 640px;
+    border-radius: 18px; overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+    display: flex; flex-direction: column;
+    padding: 34px 30px 28px;
+    color: var(--white);
+    isolation: isolate;
+  }
+  .card * { position: relative; z-index: 2; }
+  .grain::before {
+    content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background-image:
+      radial-gradient(rgba(255,255,255,0.05) 0.6px, transparent 0.6px),
+      radial-gradient(rgba(0,0,0,0.06) 0.6px, transparent 0.6px);
+    background-size: 5px 5px, 7px 7px;
+    background-position: 0 0, 3px 4px;
+    opacity: 0.55;
+  }
+  .frame::after {
+    content: ''; position: absolute; inset: 12px; z-index: 1; pointer-events: none;
+    border: 1px solid currentColor; opacity: 0.22; border-radius: 10px;
+  }
+
+  .chapter {
+    font-size: 0.62rem; letter-spacing: 0.42em; text-transform: uppercase;
+    opacity: 0.65; padding-left: 0.42em; text-align: center;
+  }
+  .card h2 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: 1.9rem; letter-spacing: 0.02em;
+    text-align: center; margin-top: 10px;
+  }
+  .verse {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.06rem; line-height: 1.75; text-align: center;
+    margin-top: 18px; opacity: 0.92;
+  }
+  .divider {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+    margin: 20px 0 4px; opacity: 0.6;
+  }
+  .divider::before, .divider::after { content: ''; height: 1px; width: 70px; background: currentColor; opacity: 0.5; }
+  .leaf { width: 14px; height: 7px; border-radius: 50%; background: currentColor; transform: rotate(-24deg); opacity: 0.8; }
+
+  /* handwriting area */
+  .write {
+    flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .write-hint {
+    font-family: var(--hand); font-size: 1.05rem; opacity: 0.66;
+    margin-bottom: 8px;
+  }
+  .lines { display: grid; gap: 34px; padding-bottom: 10px; }
+  .lines span { display: block; height: 1px; border-bottom: 1.4px dashed currentColor; opacity: 0.34; }
+
+  .foot {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 18px; font-size: 0.62rem; letter-spacing: 0.3em;
+    text-transform: uppercase; opacity: 0.55;
+  }
+  .foot .hand { font-family: var(--hand); font-size: 1rem; letter-spacing: 0.02em; text-transform: none; }
+
+  /* flower dot */
+  .bloom { width: 46px; height: 46px; margin: 14px auto 0; position: relative; }
+  .bloom i { position: absolute; left: 50%; top: 50%; width: 20px; height: 11px; border-radius: 50%; background: var(--p, #E8C85A); opacity: 0.95; }
+  .bloom i:nth-child(1){ transform: translate(-50%,-50%) rotate(0deg)   translateX(11px);}
+  .bloom i:nth-child(2){ transform: translate(-50%,-50%) rotate(60deg)  translateX(11px);}
+  .bloom i:nth-child(3){ transform: translate(-50%,-50%) rotate(120deg) translateX(11px);}
+  .bloom i:nth-child(4){ transform: translate(-50%,-50%) rotate(180deg) translateX(11px);}
+  .bloom i:nth-child(5){ transform: translate(-50%,-50%) rotate(240deg) translateX(11px);}
+  .bloom i:nth-child(6){ transform: translate(-50%,-50%) rotate(300deg) translateX(11px);}
+  .bloom b { position: absolute; left: 50%; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: var(--c, #FFF0A5); transform: translate(-50%,-50%); box-shadow: 0 0 14px var(--c, #FFF0A5); }
+
+  /* ------------------------------------------------ card 1 — night gate */
+  .c1 { background: radial-gradient(130% 90% at 50% 108%, #2a3a2e 0%, #131c16 44%, var(--night) 100%); color: var(--white); }
+  .c1 .stars i { position: absolute; border-radius: 50%; background: var(--cream); opacity: 0.5; z-index: 1; }
+  .gate { margin: 20px auto 0; width: 120px; height: 130px; z-index: 2; position: relative; opacity: 0.85; }
+  .gate::before, .gate::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 52px;
+    border: 1.6px solid var(--sage); border-bottom: 0;
+    border-radius: 60px 60px 0 0;
+  }
+  .gate::before { left: 4px; }
+  .gate::after { right: 4px; }
+  .gate i { position: absolute; top: 16px; bottom: 0; width: 1.6px; background: var(--sage); opacity: 0.8; }
+  .gate i:nth-child(1){ left: 16px; } .gate i:nth-child(2){ left: 28px; height: 92%; }
+  .gate i:nth-child(3){ right: 16px; } .gate i:nth-child(4){ right: 28px; height: 92%; }
+  .gate b { position: absolute; left: 50%; top: 46%; width: 34px; height: 34px; transform: translate(-50%,-50%); border-radius: 50%; background: radial-gradient(circle, rgba(242,216,174,0.5), transparent 70%); }
+
+  /* ------------------------------------------------ card 2 — morning garden */
+  .c2 { background: linear-gradient(178deg, #223327 0%, #2c4232 46%, #395441 78%, #4b6a4f 100%); color: var(--parchment-l); }
+  .c2 .blooms { display: flex; justify-content: center; gap: 6px; }
+  .c2 .bloom { transform: scale(0.62); margin: 4px -2px 0; }
+
+  /* ------------------------------------------------ card 3 — pond */
+  .c3 { background: linear-gradient(180deg, #1c2f33 0%, var(--water) 52%, #31555c 100%); color: var(--moon); }
+  .ripples { margin: 16px auto 0; width: 130px; height: 78px; position: relative; }
+  .ripples i { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) scaleY(0.42); border: 1.3px solid var(--water-l); border-radius: 50%; }
+  .ripples i:nth-child(1){ width: 34px; height: 34px; opacity: 0.9; }
+  .ripples i:nth-child(2){ width: 72px; height: 72px; opacity: 0.55; }
+  .ripples i:nth-child(3){ width: 116px; height: 116px; opacity: 0.3; }
+
+  /* ------------------------------------------------ card 4 — dusk bridge */
+  .c4 { background: linear-gradient(184deg, #3a2c22 0%, #59392a 42%, #2c2019 100%); color: var(--parchment); }
+  .bridge { margin: 18px auto 0; width: 180px; height: 64px; position: relative; opacity: 0.9; }
+  .bridge::before {
+    content: ''; position: absolute; left: 0; right: 44%; bottom: 18px; height: 30px;
+    border-top: 2px solid var(--amber); border-radius: 100% 100% 0 0 / 200% 200% 0 0;
+    opacity: 0.85;
+  }
+  .bridge i { position: absolute; bottom: 6px; width: 2px; height: 15px; background: var(--amber); opacity: 0.8; }
+  .bridge i:nth-child(1){ left: 12px; } .bridge i:nth-child(2){ left: 42px; height: 19px; }
+  .bridge i:nth-child(3){ left: 72px; height: 22px; } .bridge i:nth-child(4){ left: 96px; height: 18px; opacity: 0.45; }
+  .bridge b { position: absolute; right: 8px; bottom: 4px; width: 58px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, rgba(232,221,197,0.22), transparent 70%); }
+  .c4 .verse strong { font-style: normal; font-weight: 500; color: var(--cream); }
+
+  /* ------------------------------------------------ card 5 — golden reveal */
+  .c5 {
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(242,216,174,0.5), transparent 55%),
+      linear-gradient(180deg, #E9D9B6 0%, var(--parchment) 45%, #D9C7A4 100%);
+    color: var(--ink);
+  }
+  .c5 .chapter { opacity: 0.55; }
+  .c5 h2 { font-size: 2.15rem; }
+  .c5 .verse { color: var(--soil-warm); opacity: 1; }
+  .sun { margin: 6px auto 0; width: 74px; height: 74px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #FFF3D2, var(--cream) 55%, rgba(242,216,174,0));
+    box-shadow: 0 0 60px rgba(242,216,174,0.9); }
+  .link-chip {
+    margin: 22px auto 0; padding: 14px 22px;
+    background: var(--moss); color: var(--parchment-l);
+    border-radius: 8px; text-align: center;
+    font-size: 0.98rem; letter-spacing: 0.04em;
+    box-shadow: 0 10px 26px rgba(30,43,34,0.4);
+    max-width: 100%; overflow-wrap: anywhere;
+  }
+  .link-chip small { display: block; font-size: 0.6rem; letter-spacing: 0.34em; text-transform: uppercase; opacity: 0.65; margin-bottom: 6px; }
+  .c5 .foot { opacity: 0.7; }
+  .c5 .write-hint { color: var(--soil-warm); }
+  .c5 .lines span { border-color: var(--soil); }
+
+  @media print {
+    body { background: #fff; padding: 0; gap: 0; }
+    .intro { display: none; }
+    .card { page-break-after: always; margin: 10mm auto; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>The Garden Beyond Seasons — Story Cards</h1>
+  <p>Five cards, five statuses. Print or screenshot one each day — write in your own hand on the dashed lines,<br />
+     photograph it, and post. The last card opens the gate.</p>
+  <p class="hand">Built with love by Mrigankar</p>
+</div>
+
+<!-- ================= CARD I — THE GATE (night) ================= -->
+<section class="card c1 grain frame" aria-label="Card 1 of 5">
+  <div class="stars" aria-hidden="true">
+    <i style="left:14%;top:9%;width:2px;height:2px"></i>
+    <i style="left:78%;top:6%;width:1.5px;height:1.5px"></i>
+    <i style="left:64%;top:14%;width:2px;height:2px;opacity:.3"></i>
+    <i style="left:30%;top:18%;width:1.5px;height:1.5px;opacity:.35"></i>
+    <i style="left:86%;top:24%;width:2px;height:2px;opacity:.25"></i>
+  </div>
+  <p class="chapter">I &nbsp;of&nbsp; V &nbsp;·&nbsp; before the gate</p>
+  <h2>Something is growing<br />in the dark.</h2>
+  <div class="gate" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+  <p class="verse">Nothing inside asks you to stay.<br />Nothing inside asks you to leave.<br />It simply remembers.</p>
+  <div class="write">
+    <p class="write-hint">Write one thing you have carried quietly…</p>
+    <div class="lines"><span></span><span></span></div>
+  </div>
+  <div class="foot"><span>The Garden Beyond Seasons</span><span>· 1 / 5 ·</span></div>
+</section>
+
+<!-- ================= CARD II — THE MEMORY GARDEN (morning) ================= -->
+<section class="card c2 grain frame" aria-label="Card 2 of 5">
+  <p class="chapter">II &nbsp;of&nbsp; V &nbsp;·&nbsp; the memory garden</p>
+  <h2>Every feeling<br />grows its own flower.</h2>
+  <div class="blooms" aria-hidden="true">
+    <div class="bloom" style="--p:#E8C85A;--c:#FFF0A5"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div>
+    <div class="bloom" style="--p:#A95463;--c:#E9B2B7"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div>
+    <div class="bloom" style="--p:#87739E;--c:#CEC1D8"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div>
+    <div class="bloom" style="--p:#B66F43;--c:#E7C0A2"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div>
+    <div class="bloom" style="--p:#E9E8E0;--c:#F7F6F0"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div>
+  </div>
+  <p class="verse">Joy. Love. Comfort. Adventure.<br />Goodbye. Silence.<br />Which one still blooms in you?</p>
+  <div class="divider"><span class="leaf"></span></div>
+  <div class="write">
+    <p class="write-hint">Name a memory, and the feeling that remains…</p>
+    <div class="lines"><span></span><span></span><span></span></div>
+  </div>
+  <div class="foot"><span>The Garden Beyond Seasons</span><span>· 2 / 5 ·</span></div>
+</section>
+
+<!-- ================= CARD III — THE REFLECTION POND (day) ================= -->
+<section class="card c3 grain frame" aria-label="Card 3 of 5">
+  <p class="chapter">III &nbsp;of&nbsp; V &nbsp;·&nbsp; the reflection pond</p>
+  <h2>Some memories<br />rise on their own.</h2>
+  <div class="ripples" aria-hidden="true"><i></i><i></i><i></i></div>
+  <p class="verse">What returns is not always<br />asking to be held.</p>
+  <div class="divider"><span class="leaf"></span></div>
+  <div class="write">
+    <p class="write-hint">Write what surfaced when you read that…</p>
+    <div class="lines"><span></span><span></span><span></span></div>
+  </div>
+  <div class="foot"><span>The Garden Beyond Seasons</span><span>· 3 / 5 ·</span></div>
+</section>
+
+<!-- ================= CARD IV — THE FORGOTTEN BRIDGE (dusk) ================= -->
+<section class="card c4 grain frame" aria-label="Card 4 of 5">
+  <p class="chapter">IV &nbsp;of&nbsp; V &nbsp;·&nbsp; the forgotten bridge</p>
+  <h2>Some roads<br />remain unfinished.</h2>
+  <div class="bridge" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+  <p class="verse"><strong>Not every unfinished road<br />is a failure.</strong></p>
+  <div class="divider"><span class="leaf"></span></div>
+  <div class="write">
+    <p class="write-hint">Write to someone the road never reached…</p>
+    <div class="lines"><span></span><span></span><span></span></div>
+  </div>
+  <div class="foot"><span>The Garden Beyond Seasons</span><span>· 4 / 5 ·</span></div>
+</section>
+
+<!-- ================= CARD V — THE GATE OPENS (golden) ================= -->
+<section class="card c5 grain frame" aria-label="Card 5 of 5">
+  <p class="chapter">V &nbsp;of&nbsp; V &nbsp;·&nbsp; the gate is open</p>
+  <div class="sun" aria-hidden="true"></div>
+  <h2>The garden<br />is real.</h2>
+  <p class="verse">Everything you wrote this week<br />has a place to be planted —<br />and it never leaves your device.</p>
+  <div class="link-chip" contenteditable="true" spellcheck="false">
+    <small>Enter the garden</small>
+    your-garden.amplifyapp.com
+  </div>
+  <div class="write">
+    <p class="write-hint">Sign your invitation…</p>
+    <div class="lines"><span></span></div>
+  </div>
+  <div class="foot"><span class="hand">Built with love by Mrigankar</span><span>· 5 / 5 ·</span></div>
+</section>
+
+</body>
+</html>
