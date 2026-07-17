@@ -211,6 +211,11 @@ function onZoneChange(id) {
   else if (id === 'bridge') { hidePrompt(); showBridge(); }
   else if (id === 'meadow') { hidePrompt(); showMeadow(); }
   else { hidePrompt(); if (zone.title) whisper(zone); }
+  // no hover on touch — whisper what a fingertip can do here
+  if (isTouch) {
+    if (id === 'garden') showPrompt('Tap the glowing soil to plant a memory', false, null, 5000);
+    else if (id === 'pond') showPrompt('Touch the water', false, null, 4000);
+  }
   world.setWeather(pickWeather(id));
 }
 
@@ -492,8 +497,20 @@ function wakeControls() {
   }, 4000);
 }
 
+const isTouch = matchMedia('(pointer:coarse)').matches;
+
 function setupInput() {
   const canvas = $('#scene');
+
+  // On phones the sky-drift parallax comes from the device itself
+  if (isTouch && 'DeviceOrientationEvent' in window) {
+    window.addEventListener('deviceorientation', (e) => {
+      if (e.gamma == null || e.beta == null) return;
+      const nx = Math.max(-1, Math.min(1, e.gamma / 28));
+      const ny = Math.max(-1, Math.min(1, (e.beta - 40) / 28));
+      world.updatePointer(nx, -ny);
+    });
+  }
 
   window.addEventListener('pointermove', (e) => {
     const nx = (e.clientX / window.innerWidth) * 2 - 1;
@@ -593,13 +610,16 @@ function maybeFragment() {
 
 // ---------------------------------------------------------------- prompt/whisper helpers
 let promptClick = null;
-function showPrompt(text, actionable, onClick) {
+let promptHideTimer = null;
+function showPrompt(text, actionable, onClick, ttl) {
+  clearTimeout(promptHideTimer);
   dom.prompt.textContent = text;
   dom.prompt.classList.remove('hidden');
   requestAnimationFrame(() => dom.prompt.classList.add('show'));
   dom.prompt.classList.toggle('act', !!actionable);
   if (promptClick) dom.prompt.removeEventListener('click', promptClick);
   if (actionable && onClick) { promptClick = () => onClick(); dom.prompt.addEventListener('click', promptClick); }
+  if (ttl) promptHideTimer = setTimeout(hidePrompt, ttl);
 }
 function hidePrompt() { dom.prompt.classList.remove('show', 'act'); }
 

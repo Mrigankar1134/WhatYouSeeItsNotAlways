@@ -485,11 +485,43 @@ body.dyslexia .parchment, body.dyslexia .viewer-story { font-family: 'Inter', sa
 body[data-textscale="large"] { font-size: 18px; }
 body[data-textscale="xl"] { font-size: 20px; }
 
+/* touch: no double-tap zoom on interactive pieces, comfortable targets */
+button, .chip, .pressed, .emotion, .switch, .prompt.act { touch-action: manipulation; }
+@media (pointer: coarse) {
+  .glyph { width: 50px; height: 50px; }
+  .close-x { padding: 12px; font-size: 1.7rem; }
+  .chip { padding: 9px 16px; }
+}
+
 @media (max-width: 640px) {
   .emotions { grid-template-columns: repeat(2, 1fr); }
-  .parchment { padding: 24px 20px; border-radius: 4px; max-height: 100dvh; }
+  .parchment {
+    padding: 24px 20px; border-radius: 4px; max-height: 100dvh;
+    padding-top: max(24px, env(safe-area-inset-top));
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
   .dialog-scrim { padding: 0; }
-  .journal-card, .viewer-card, .archive-card, .access-card { width: 100%; min-height: 100dvh; border-radius: 0; }
+  .journal-card, .viewer-card, .archive-card, .access-card, .howto-card { width: 100%; min-height: 100dvh; border-radius: 0; }
+  .firstrun-card { max-width: min(460px, calc(100vw - 32px)); border-radius: 6px; min-height: 0; }
+  .whisper { top: 18%; max-width: 92vw; }
+  .prompt { bottom: calc(13% + env(safe-area-inset-bottom)); letter-spacing: 0.22em; padding-left: 0.22em; max-width: 88vw; text-align: center; }
+  .wayfinder .wf-name { min-width: 0; font-size: 0.62rem; }
+  .opening-lines { top: 52%; }
+  .line { font-size: clamp(1.25rem, 5.4vw, 1.8rem); }
+  .opening-credit { font-size: clamp(1.3rem, 6vw, 1.9rem); white-space: normal; text-align: center; width: 88vw; }
+  .enter-cue { bottom: calc(9% + env(safe-area-inset-bottom)); }
+  .form-actions .btn-primary, .form-actions .btn-ghost, .form-actions .btn-danger { flex: 1 1 auto; }
+}
+
+/* short landscape phones: keep the composition breathable */
+@media (max-height: 480px) {
+  .whisper { top: 10%; }
+  .whisper .w-title { font-size: clamp(1.3rem, 4vh, 2rem); }
+  .opening-lines { top: 48%; }
+  .line { font-size: clamp(1.1rem, 5vh, 1.6rem); }
+  .enter-cue { bottom: 6%; }
+  .enter-stem { height: 24px; }
+  .opening-credit.rest { top: 8%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

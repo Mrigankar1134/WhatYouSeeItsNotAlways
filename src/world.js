@@ -15,7 +15,7 @@ export class World {
   constructor(canvas) {
     this.canvas = canvas;
     this.reducedMotion = false;
-    this.quality = 'cinematic';
+    this.quality = World.detectQuality();
     this.wind = 0.4;
     this.travel = 0;            // 0..1 along the path
     this.targetTravel = 0;
@@ -49,13 +49,28 @@ export class World {
     this._resize();
   }
 
+  // Pick a starting quality from the device, so phones get a steady, living
+  // garden instead of a slideshow. Never called "low" anywhere user-facing.
+  static detectQuality() {
+    const coarse = matchMedia('(pointer:coarse)').matches;
+    const mem = navigator.deviceMemory || 8;
+    const cores = navigator.hardwareConcurrency || 8;
+    const small = Math.min(screen.width, screen.height) < 480;
+    if (mem <= 2 || (coarse && cores <= 4)) return 'gentle';
+    if (coarse || small || mem <= 4 || cores <= 4) return 'balanced';
+    return 'cinematic';
+  }
+
   _buildComposer() {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    const size = new THREE.Vector2(window.innerWidth, window.innerHeight);
-    // soft, restrained bloom — glow, never explosions
-    this.bloom = new UnrealBloomPass(size, 0.55, 0.7, 0.82);
-    this.composer.addPass(this.bloom);
+    if (this.quality !== 'gentle') {
+      const size = new THREE.Vector2(window.innerWidth, window.innerHeight);
+      // soft, restrained bloom — glow, never explosions
+      const strength = this.quality === 'balanced' ? 0.42 : 0.55;
+      this.bloom = new UnrealBloomPass(size, strength, 0.7, 0.82);
+      this.composer.addPass(this.bloom);
+    }
     this.composer.addPass(new OutputPass());
   }
 
@@ -63,12 +78,13 @@ export class World {
   emit(name, ...a) { if (this.callbacks[name]) this.callbacks[name](...a); }
 
   _initRenderer() {
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: this.quality !== 'gentle', alpha: false, powerPreference: 'high-performance' });
+    const prCap = this.quality === 'gentle' ? 1.25 : (this.quality === 'balanced' ? 1.75 : 2);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, prCap));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = this.quality !== 'gentle';
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
@@ -950,7 +966,7 @@ export class World {
     this.pondMat.uniforms.uRipple.value.set(this._ripplePos.x, this._ripplePos.y, this._rippleAge);
 
     // bloom gets a touch stronger at night for luminous flowers & fireflies
-    if (this.bloom) this.bloom.strength = 0.45 + this.nightAmount * 0.55;
+    if (this.bloom) this.bloom.strength = (this.quality === 'balanced' ? 0.34 : 0.45) + this.nightAmount * 0.55;
     if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera);
   }
 

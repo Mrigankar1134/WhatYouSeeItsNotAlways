@@ -65,8 +65,8 @@ export function openHowTo(container, handlers) {
     </div>
     <ul class="howto-list">
       <li><span class="howto-act">Walk the path</span> Scroll, swipe, or press <kbd>W</kbd>/<kbd>S</kbd> or the arrow keys to drift forward and back.</li>
-      <li><span class="howto-act">Plant a memory</span> In the Memory Garden, bare patches of soil glow softly. Click one and the journal opens.</li>
-      <li><span class="howto-act">Revisit a memory</span> Click any flower you have planted. Each emotion grows its own kind of bloom.</li>
+      <li><span class="howto-act">Plant a memory</span> In the Memory Garden, bare patches of soil glow softly. Touch one and the journal opens.</li>
+      <li><span class="howto-act">Revisit a memory</span> Touch any flower you have planted. Each emotion grows its own kind of bloom.</li>
       <li><span class="howto-act">Touch the pond</span> Tap the water for ripples. Sometimes a fragment of a memory rises to the surface.</li>
       <li><span class="howto-act">Sit for a while</span> The bench asks nothing of you. The interface steps away and the garden simply continues.</li>
       <li><span class="howto-act">The bridge</span> Some roads remain unfinished. It cannot be crossed — that is not a puzzle.</li>
