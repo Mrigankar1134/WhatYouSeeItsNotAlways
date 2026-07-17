@@ -2,6 +2,10 @@
 // instanced grass with wind, particles, a calm camera on a spline,
 // a full time-of-day cycle, and plantable soil spots.
 import * as THREE from 'three';
+import { EffectComposer } from '../vendor/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from '../vendor/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from '../vendor/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from '../vendor/jsm/postprocessing/OutputPass.js';
 import { createFlower, setBloom, animateFlower } from './flowers.js';
 import { ZONES } from './config.js';
 
@@ -34,13 +38,25 @@ export class World {
     this._buildLights();
     this._buildTerrain();
     this._buildGrass();
+    this._buildWildflowers();
     this._buildGate();
     this._buildPropsAndZones();
     this._buildPond();
     this._buildParticles();
     this._buildPath();
+    this._buildComposer();
     window.addEventListener('resize', () => this._resize());
     this._resize();
+  }
+
+  _buildComposer() {
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    const size = new THREE.Vector2(window.innerWidth, window.innerHeight);
+    // soft, restrained bloom — glow, never explosions
+    this.bloom = new UnrealBloomPass(size, 0.55, 0.7, 0.82);
+    this.composer.addPass(this.bloom);
+    this.composer.addPass(new OutputPass());
   }
 
   on(name, fn) { this.callbacks[name] = fn; }
@@ -134,16 +150,11 @@ export class World {
       pos.setY(i, h);
     }
     geo.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ color: 0x3d5238, roughness: 1.0, metalness: 0 });
-    mat.onBeforeCompile = (sh) => {
-      // subtle vertex-colour variation without textures
-      sh.fragmentShader = sh.fragmentShader.replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
-         float n = fract(sin(dot(vViewPosition.xz, vec2(12.9,78.2)))*43758.5);
-         diffuseColor.rgb *= 0.86 + n*0.16;`
-      );
-    };
+    const tex = this._groundTexture();
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(26, 26);
+    tex.anisotropy = 4;
+    const mat = new THREE.MeshStandardMaterial({ map: tex, color: 0x8fa06f, roughness: 1.0, metalness: 0 });
     this.ground = new THREE.Mesh(geo, mat);
     this.ground.receiveShadow = true;
     this.scene.add(this.ground);
@@ -158,6 +169,30 @@ export class World {
     return h;
   }
 
+  _groundTexture() {
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#5c7048'; ctx.fillRect(0, 0, 512, 512);
+    // mottled patches of lighter/darker green + occasional earth
+    const blobs = [['#6f8a52', 120], ['#4a5e3a', 120], ['#7d9760', 70], ['#3f5030', 60], ['#6b5c3e', 26]];
+    for (const [col, n] of blobs) {
+      ctx.fillStyle = col;
+      for (let i = 0; i < n; i++) {
+        const x = Math.random() * 512, y = Math.random() * 512, r = 12 + Math.random() * 46;
+        ctx.globalAlpha = 0.35 + Math.random() * 0.4;
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * (0.5 + Math.random()), Math.random() * 6, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    // fine speckle
+    for (let i = 0; i < 9000; i++) {
+      const g = 60 + Math.random() * 70;
+      ctx.fillStyle = `rgba(${g - 20},${g},${g - 40},${Math.random() * 0.35})`;
+      ctx.fillRect(Math.random() * 512, Math.random() * 512, 1.5, 1.5);
+    }
+    return new THREE.CanvasTexture(c);
+  }
+
   // ---------- GRASS ----------
   _buildGrass() {
     const blade = new THREE.PlaneGeometry(0.05, 0.5, 1, 4);
@@ -169,46 +204,107 @@ export class World {
     }
     blade.computeVertexNormals();
 
-    const count = this.quality === 'gentle' ? 5000 : (this.quality === 'balanced' ? 14000 : 26000);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x6f8a4a, roughness: 0.9, side: THREE.DoubleSide });
+    const count = this.quality === 'gentle' ? 9000 : (this.quality === 'balanced' ? 24000 : 46000);
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide, vertexColors: false });
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = { value: 0 };
       sh.uniforms.uWind = { value: this.wind };
       this._grassUniforms = sh.uniforms;
-      sh.vertexShader = 'uniform float uTime; uniform float uWind;\n' + sh.vertexShader.replace(
+      sh.vertexShader = 'uniform float uTime; uniform float uWind; varying float vBlade;\n' + sh.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
          float bend = position.y / 0.5;
+         vBlade = bend;
          float w = sin(uTime*1.3 + instanceMatrix[3][0]*0.6 + instanceMatrix[3][2]*0.5);
          transformed.x += bend*bend * w * (0.06 + uWind*0.18);
          transformed.z += bend*bend * cos(uTime*0.9 + instanceMatrix[3][2]) * (0.03 + uWind*0.08);`
       );
       // tip lighter, base darker for depth
-      sh.fragmentShader = sh.fragmentShader.replace(
+      sh.fragmentShader = 'varying float vBlade;\n' + sh.fragmentShader.replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-         diffuseColor.rgb *= mix(0.6, 1.15, clamp(vViewPosition.y*0.0+0.5,0.0,1.0));`
+         diffuseColor.rgb *= mix(0.62, 1.18, clamp(vBlade, 0.0, 1.0));`
       );
     };
     this.grass = new THREE.InstancedMesh(blade, mat, count);
     this.grass.receiveShadow = true;
+    this.grass.castShadow = false;
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3();
     const up = new THREE.Vector3(0, 1, 0);
+    const col = new THREE.Color();
     let placed = 0;
     for (let i = 0; i < count * 2 && placed < count; i++) {
-      const x = (Math.random() - 0.5) * 120;
-      const z = 20 - Math.random() * 110;
-      if (Math.abs(x) < 1.4 && z > -80) continue; // keep the path clear-ish
+      // denser near the path, still covering the whole valley floor
+      const near = Math.random() < 0.6;
+      const x = near ? (Math.random() - 0.5) * 60 : (Math.random() - 0.5) * 180;
+      const z = near ? (24 - Math.random() * 120) : (30 - Math.random() * 150);
+      if (Math.abs(x) < 1.1 && z > -80) continue; // keep the walked path clear-ish
+      const dist = Math.hypot(x, z);
+      if (dist > 95) continue; // let the far rim be low hills, not grass walls
       const y = this.groundHeight(x, z);
       q.setFromAxisAngle(up, Math.random() * Math.PI);
-      const sc = 0.6 + Math.random() * 1.1;
-      s.set(sc, sc * (0.7 + Math.random() * 0.7), sc);
+      const sc = 0.55 + Math.random() * 1.2;
+      s.set(sc, sc * (0.7 + Math.random() * 0.8), sc);
       m.compose(new THREE.Vector3(x, y, z), q, s);
-      this.grass.setMatrixAt(placed++, m);
+      this.grass.setMatrixAt(placed, m);
+      // per-blade colour variation: yellow-greens to deep greens
+      const h = 0.24 + (Math.random() - 0.5) * 0.05;
+      const l = 0.32 + Math.random() * 0.18;
+      col.setHSL(h, 0.42, l);
+      this.grass.setColorAt(placed, col);
+      placed++;
     }
     this.grass.count = placed;
     this.grass.instanceMatrix.needsUpdate = true;
+    if (this.grass.instanceColor) this.grass.instanceColor.needsUpdate = true;
     this.scene.add(this.grass);
+  }
+
+  _flowerDotTexture() {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const ctx = c.getContext('2d');
+    ctx.translate(32, 32);
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 5; i++) {
+      ctx.rotate((Math.PI * 2) / 5);
+      ctx.beginPath(); ctx.ellipse(0, -16, 8, 15, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = '#ffe9a8';
+    ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
+    return new THREE.CanvasTexture(c);
+  }
+
+  _buildWildflowers() {
+    const geo = new THREE.PlaneGeometry(0.3, 0.3);
+    geo.translate(0, 0.15, 0);
+    const mat = new THREE.MeshStandardMaterial({
+      map: this._flowerDotTexture(), transparent: true, alphaTest: 0.35, side: THREE.DoubleSide,
+      roughness: 0.8, emissive: 0xffffff, emissiveIntensity: 0.12,
+    });
+    const n = this.quality === 'gentle' ? 160 : (this.quality === 'balanced' ? 420 : 820);
+    this.wildflowers = new THREE.InstancedMesh(geo, mat, n);
+    const tints = [0xfdf6e3, 0xffe6a0, 0xe9b2b7, 0xcec1d8, 0xf7f6f0, 0xfff0a5];
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), col = new THREE.Color();
+    const up = new THREE.Vector3(0, 1, 0);
+    let placed = 0;
+    for (let i = 0; i < n * 2 && placed < n; i++) {
+      const x = (Math.random() - 0.5) * 130;
+      const z = 24 - Math.random() * 130;
+      if (Math.abs(x) < 1.4 && z > -80) continue;
+      if (Math.hypot(x, z) > 88) continue;
+      const y = this.groundHeight(x, z);
+      q.setFromAxisAngle(up, Math.random() * Math.PI);
+      const sc = 0.6 + Math.random() * 0.9;
+      s.set(sc, sc, sc);
+      m.compose(new THREE.Vector3(x, y, z), q, s);
+      this.wildflowers.setMatrixAt(placed, m);
+      this.wildflowers.setColorAt(placed, col.set(tints[(Math.random() * tints.length) | 0]));
+      placed++;
+    }
+    this.wildflowers.count = placed;
+    this.wildflowers.instanceMatrix.needsUpdate = true;
+    if (this.wildflowers.instanceColor) this.wildflowers.instanceColor.needsUpdate = true;
+    this.scene.add(this.wildflowers);
   }
 
   // ---------- GATE ----------
@@ -272,11 +368,24 @@ export class World {
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * scale, 0.32 * scale, 3.2 * scale, 7), trunkMat);
     trunk.position.y = 1.6 * scale; trunk.castShadow = true; g.add(trunk);
     if (!bare) {
-      const foliMat = new THREE.MeshStandardMaterial({ color: 0x3f5c34, roughness: 1 });
-      for (let i = 0; i < 4; i++) {
-        const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2 * scale, 1), foliMat);
-        blob.position.set((Math.random() - 0.5) * 1.4 * scale, (3 + Math.random() * 1.4) * scale, (Math.random() - 0.5) * 1.4 * scale);
-        blob.scale.set(1, 0.85, 1); blob.castShadow = true;
+      const hue = 0.26 + (Math.random() - 0.5) * 0.04;
+      const foliMat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(hue, 0.4, 0.28), roughness: 1, flatShading: true });
+      const foliMat2 = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(hue, 0.42, 0.36), roughness: 1, flatShading: true });
+      const blobN = 7;
+      for (let i = 0; i < blobN; i++) {
+        const r = (0.9 + Math.random() * 0.7) * scale;
+        const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 2), i % 2 ? foliMat2 : foliMat);
+        const ang = (i / blobN) * Math.PI * 2;
+        const rad = (0.5 + Math.random() * 0.7) * scale;
+        blob.position.set(Math.cos(ang) * rad, (2.9 + Math.random() * 1.8) * scale, Math.sin(ang) * rad);
+        blob.scale.set(1, 0.88, 1); blob.castShadow = true;
+        // gently deform for an organic silhouette
+        const p = blob.geometry.attributes.position;
+        for (let v = 0; v < p.count; v++) {
+          const f = 1 + (Math.random() - 0.5) * 0.18;
+          p.setXYZ(v, p.getX(v) * f, p.getY(v) * f, p.getZ(v) * f);
+        }
+        blob.geometry.computeVertexNormals();
         g.add(blob);
       }
     } else {
@@ -707,10 +816,12 @@ export class World {
     this.skyMat.uniforms.sunI.value = 0.4 + day * 0.9;
 
     this.sun.color.copy(sunColor);
-    this.sun.intensity = 0.15 + day * 2.2;
-    this.hemi.intensity = 0.25 + day * 0.7;
+    this.sun.intensity = 0.25 + day * 2.1;
+    this.hemi.intensity = 0.5 + day * 0.6;
     this.hemi.color.copy(midCol);
-    this.ambient.intensity = 0.2 + day * 0.25;
+    this.hemi.groundColor.copy(new THREE.Color(0x2c3326)).lerp(new THREE.Color(0x11161f), this.nightAmount);
+    this.ambient.intensity = 0.32 + day * 0.22;
+    this.ambient.color.copy(new THREE.Color(0x404838)).lerp(new THREE.Color(0x2a3550), this.nightAmount);
 
     // fog + water tone
     this.scene.fog.color.copy(midCol).multiplyScalar(0.55).lerp(new THREE.Color(0x0c1414), this.nightAmount * 0.6);
@@ -785,10 +896,9 @@ export class World {
     if (this.benchOn) {
       // hold near the bench viewpoint
     } else {
-      const diff = this.targetTravel - this.travel;
-      this.travelVel += diff * dt * 2.4;
-      this.travelVel *= 0.86;
-      this.travel = THREE.MathUtils.clamp(this.travel + this.travelVel * dt * 3, 0, 1);
+      // critically-damped, framerate-independent easing toward the target
+      const k = 1 - Math.exp(-dt / 0.62);
+      this.travel = THREE.MathUtils.clamp(this.travel + (this.targetTravel - this.travel) * k, 0, 1);
     }
     const nowZone = this.currentZoneId();
     if (nowZone !== prevZone) this.emit('zone', nowZone);
@@ -802,7 +912,7 @@ export class World {
       this._camLookAt(look);
     } else {
       const p = this.pathCurve.getPointAt(this.travel);
-      this.camGroup.position.lerp(p, 0.08);
+      this.camGroup.position.lerp(p, 1 - Math.exp(-dt / 0.28));
       // look a little further along the path
       const ahead = this.pathCurve.getPointAt(Math.min(1, this.travel + 0.04));
       this.camera.position.set(0, 0, 0);
@@ -840,7 +950,9 @@ export class World {
     this._rippleAge += dt;
     this.pondMat.uniforms.uRipple.value.set(this._ripplePos.x, this._ripplePos.y, this._rippleAge);
 
-    this.renderer.render(this.scene, this.camera);
+    // bloom gets a touch stronger at night for luminous flowers & fireflies
+    if (this.bloom) this.bloom.strength = 0.45 + this.nightAmount * 0.55;
+    if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera);
   }
 
   _camLookAt(target) {
@@ -896,6 +1008,8 @@ export class World {
   _resize() {
     const w = window.innerWidth, h = window.innerHeight;
     this.renderer.setSize(w, h, false);
+    if (this.composer) this.composer.setSize(w, h);
+    if (this.bloom) this.bloom.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }

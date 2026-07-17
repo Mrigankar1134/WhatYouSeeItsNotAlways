@@ -115,6 +115,26 @@ body.high-contrast #grade { opacity: 0.35; }
 @keyframes drift { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-14px);} }
 @keyframes breathe { 0%,100%{ opacity:.5;} 50%{ opacity:.9;} }
 
+/* Opening credit — a quiet dedication before the poem */
+.opening-credit {
+  position: absolute; left: 50%; top: 40%;
+  transform: translate(-50%, -50%) translateY(12px);
+  margin: 0; white-space: nowrap;
+  font-family: var(--font-hand);
+  font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+  color: var(--sunrise-cream);
+  opacity: 0; filter: blur(12px);
+  text-shadow: 0 0 34px rgba(242,216,174,0.35), 0 2px 24px rgba(0,0,0,0.7);
+  transition: opacity 1.8s var(--ease-soft), filter 1.8s var(--ease-soft),
+              transform 1.8s var(--ease-soft), top 1.6s var(--ease-soft);
+}
+.opening-credit.show { opacity: 0.95; filter: blur(0); transform: translate(-50%, -50%); }
+.opening-credit.rest {
+  top: 12%;
+  opacity: 0.4;
+  font-size: clamp(1rem, 1.8vw, 1.3rem);
+}
+
 /* Opening cinematic lines */
 .opening-lines {
   position: absolute; left: 50%; top: 56%;
@@ -189,7 +209,9 @@ body.high-contrast #grade { opacity: 0.35; }
 }
 .prompt.show { opacity: 0.72; }
 .prompt.act { pointer-events: auto; cursor: pointer; }
-.prompt.act:hover { opacity: 1; }
+.prompt.show.act { animation: promptBreathe 4.5s ease-in-out infinite; }
+@keyframes promptBreathe { 0%,100% { opacity: 0.6; } 50% { opacity: 0.95; } }
+.prompt.act:hover { opacity: 1; animation: none; }
 
 /* ---------------- Corner controls ---------------- */
 .controls {
@@ -209,7 +231,11 @@ body.high-contrast #grade { opacity: 0.35; }
   display: grid; place-items: center; cursor: pointer;
   transition: transform 0.4s var(--ease-ui), background 0.4s, border-color 0.4s;
 }
-.glyph:hover { transform: translateY(-2px); background: rgba(30,43,34,0.7); border-color: rgba(216,196,154,0.5); }
+.glyph:hover {
+  transform: translateY(-2px); background: rgba(30,43,34,0.7);
+  border-color: rgba(216,196,154,0.5);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 14px rgba(216,196,154,0.12);
+}
 .glyph svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .glyph.off svg .wave, .glyph.off svg { opacity: 0.55; }
 .glyph.muted::after {
@@ -240,10 +266,14 @@ body.high-contrast #grade { opacity: 0.35; }
   display: flex; align-items: center; justify-content: center;
   padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
   background: var(--scrim);
-  backdrop-filter: blur(3px);
-  animation: scrimIn 0.6s var(--ease-soft);
+  backdrop-filter: blur(7px);
+  animation: scrimIn 0.7s var(--ease-soft);
 }
-@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scrimIn { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; backdrop-filter: blur(7px); } }
+.dialog-scrim.closing { animation: scrimOut 0.34s var(--ease-soft) forwards; pointer-events: none; }
+@keyframes scrimOut { to { opacity: 0; } }
+.dialog-scrim.closing .parchment { animation: cardOut 0.34s var(--ease-soft) forwards; }
+@keyframes cardOut { to { opacity: 0; transform: translateY(10px) scale(0.99); } }
 
 .parchment {
   position: relative;
@@ -259,9 +289,13 @@ body.high-contrast #grade { opacity: 0.35; }
   padding: clamp(24px, 4vw, 44px);
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
-  animation: cardIn 0.7s var(--ease-ui);
+  animation: cardIn 0.85s var(--ease-ui);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74,52,39,0.35) transparent;
 }
-@keyframes cardIn { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(22px) scale(0.97); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
+.parchment::-webkit-scrollbar { width: 8px; }
+.parchment::-webkit-scrollbar-thumb { background: rgba(74,52,39,0.3); border-radius: 4px; }
 /* faint botanical corner marks */
 .parchment::before, .parchment::after {
   content: ''; position: absolute; width: 62px; height: 62px;
@@ -275,8 +309,20 @@ body.high-contrast #grade { opacity: 0.35; }
 .soft { color: var(--faded-ink); }
 
 .firstrun-card { max-width: 460px; width: 100%; text-align: center; }
-.firstrun-card h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0 0 0.3em; }
-.firstrun-card .soft { margin-bottom: 1.6rem; }
+.firstrun-card h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0.1em 0 0.3em; }
+.firstrun-card .soft { margin-bottom: 1.4rem; }
+.fr-credit {
+  font-family: var(--font-hand); font-size: 1.25rem; color: var(--soil-warm);
+  margin: 0 0 0.6rem; letter-spacing: 0.01em;
+}
+.fr-name-field { text-align: left; margin: 0 0 1.4rem; }
+.fr-name-field label { display: block; font-family: var(--font-poetic); font-size: 1.15rem; color: var(--ink); margin-bottom: 0.4rem; }
+.fr-name-field input {
+  width: 100%; font-family: var(--font-ui); font-size: 1rem; color: var(--ink);
+  background: rgba(255,255,255,0.55); border: 1px solid rgba(74,52,39,0.28);
+  border-radius: 4px; padding: 12px 14px;
+}
+.fr-name-field input:focus { outline: none; border-color: var(--soil-warm); }
 
 .switch {
   display: flex; align-items: center; gap: 12px;
@@ -294,13 +340,17 @@ body.high-contrast #grade { opacity: 0.35; }
   transition: transform 0.35s var(--ease-ui), background 0.35s, box-shadow 0.35s, filter 0.35s;
 }
 .btn-primary {
-  background: var(--moss-deep); color: var(--parchment-light);
-  box-shadow: 0 8px 22px rgba(30,43,34,0.4);
+  background: linear-gradient(170deg, #26382b, var(--moss-deep) 55%, #17211a);
+  color: var(--parchment-light);
+  box-shadow: 0 8px 22px rgba(30,43,34,0.4), inset 0 1px 0 rgba(246,244,238,0.14);
   display: inline-flex; align-items: center; gap: 10px; justify-content: center;
   margin-top: 1.4rem;
 }
-.btn-primary:hover { filter: brightness(1.06); transform: translateY(-2px); }
-.btn-primary:active { transform: translateY(0); }
+.btn-primary:hover {
+  filter: brightness(1.08); transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(30,43,34,0.5), inset 0 1px 0 rgba(246,244,238,0.18);
+}
+.btn-primary:active { transform: translateY(0); transition-duration: 0.12s; }
 .btn-ghost {
   background: transparent; color: var(--faded-ink);
   border-color: rgba(74,52,39,0.25);
@@ -327,6 +377,7 @@ body.high-contrast #grade { opacity: 0.35; }
 }
 .field input:focus, .field textarea:focus, .field select:focus {
   outline: none; border-color: var(--soil-warm); background: rgba(255,255,255,0.72);
+  box-shadow: 0 0 0 3px rgba(107,73,52,0.12);
 }
 .field textarea { resize: none; min-height: 120px; line-height: 1.6; }
 .field .hint { font-size: 0.75rem; color: var(--faded-ink); margin-top: 6px; }

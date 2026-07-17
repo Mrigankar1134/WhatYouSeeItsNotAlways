@@ -30,6 +30,7 @@
 
   <!-- Opening cinematic text -->
   <div id="opening" class="veil hidden" aria-hidden="true">
+    <p id="opening-credit" class="opening-credit">Built with love by Mrigankar</p>
     <div class="opening-lines">
       <p class="line">Nothing inside asks you to stay.</p>
       <p class="line">Nothing inside asks you to leave.</p>
@@ -44,8 +45,13 @@
   <!-- First-run consent -->
   <div id="firstrun" class="dialog-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="fr-title">
     <div class="parchment firstrun-card">
+      <p class="fr-credit">Built with love by Mrigankar</p>
       <h1 id="fr-title" class="poetic">Before you enter</h1>
-      <p class="soft">A few quiet choices. Nothing is remembered about you — only what you plant.</p>
+      <p class="soft">A few quiet choices. The garden only keeps what you choose to plant.</p>
+      <div class="fr-name-field">
+        <label for="fr-name">What may the garden call you?</label>
+        <input id="fr-name" type="text" maxlength="60" placeholder="Your name" autocomplete="given-name" />
+      </div>
       <label class="switch">
         <input type="checkbox" id="fr-sound" checked />
         <span>Begin with sound</span>

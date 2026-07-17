@@ -40,9 +40,13 @@ function trap(container, onEscape) {
 function release() { if (trapHandler) document.removeEventListener('keydown', trapHandler); trapHandler = null; }
 
 export function closeDialog(node) {
-  node.classList.add('hidden');
-  node.innerHTML = '';
   release();
+  node.classList.add('closing');
+  setTimeout(() => {
+    node.classList.add('hidden');
+    node.classList.remove('closing');
+    node.innerHTML = '';
+  }, 340);
 }
 
 // =====================================================================

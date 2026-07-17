@@ -5,12 +5,14 @@ import * as UI from './ui.js';
 import { COPY, ZONES, EMOTIONS } from './config.js';
 import { allMemories, putMemory, deleteMemory, newId, loadPrefs, savePrefs } from './db.js';
 import { exportSeed, readSeed, restoreSeed } from './seed.js';
+import { remoteSave, remoteDelete, remoteAll, remotePlayer } from './api.js';
 
 const $ = (s) => document.querySelector(s);
 
 const dom = {
   loader: $('#loader'), loaderProgress: $('#loader-progress'),
   opening: $('#opening'), lines: [...document.querySelectorAll('.line')], enterCue: $('#enter-cue'),
+  credit: $('#opening-credit'),
   firstrun: $('#firstrun'), frSound: $('#fr-sound'), frMotion: $('#fr-motion'), frRemember: $('#fr-remember'), frBegin: $('#fr-begin'),
   whisper: $('#whisper'), prompt: $('#prompt'), controls: $('#controls'), wayfinder: $('#wayfinder'),
   journal: $('#journal'), viewer: $('#viewer'), archive: $('#archive'), access: $('#access'),
@@ -24,6 +26,7 @@ const state = {
   pendingSpot: null,
   memories: [],
   prefs: loadPrefs(),
+  playerName: '',
   soundOn: true,
   paused: false,
   dialogOpen: false,
@@ -44,14 +47,30 @@ async function boot() {
   world.on('zone', onZoneChange);
   world.on('grade', onGrade);
 
-  // load memories
+  state.playerName = state.prefs.playerName || '';
+
+  // load memories — reconcile the database with the local copy
+  world.ensureSpots();
   try {
-    state.memories = await allMemories();
-    world.ensureSpots();
+    const local = await allMemories();
+    const remote = await remoteAll(); // null if offline
+    let list = local;
+    if (remote) {
+      // union by id; database wins on conflicts, and any local-only memory is pushed up
+      const byId = new Map(local.map((m) => [m.id, m]));
+      remote.forEach((m) => byId.set(m.id, m));
+      list = [...byId.values()];
+      // persist reconciled set locally; push local-only rows to the database
+      const remoteIds = new Set(remote.map((m) => m.id));
+      for (const m of list) {
+        await putMemory(m);
+        if (!remoteIds.has(m.id)) remoteSave(m, state.playerName);
+      }
+    }
+    state.memories = list;
     state.memories.forEach((m) => world.addFlowerFromRecord(m));
   } catch (e) {
     console.warn('memory load failed', e);
-    world.ensureSpots();
   }
 
   // render loop
@@ -79,12 +98,20 @@ function revealOpening() {
   }
 }
 
+function persistPrefs() {
+  state.prefs.clientId ||= newId();
+  savePrefs(state.prefs);
+  remotePlayer(state.prefs.clientId, state.prefs.playerName || '', state.prefs);
+}
+
 function beginFromFirstRun() {
   state.soundOn = dom.frSound.checked;
+  state.playerName = ($('#fr-name')?.value || '').trim();
+  state.prefs.playerName = state.playerName;
   state.prefs.reduceMotion = dom.frMotion.checked;
   state.prefs.remember = dom.frRemember.checked;
   state.prefs.visited = true;
-  savePrefs(state.prefs);
+  persistPrefs();
   applyPrefs(state.prefs);
   dom.firstrun.classList.add('hidden');
   state.dialogOpen = false;
@@ -97,12 +124,17 @@ function beginFromFirstRun() {
 function startOpeningCinematic(skippable) {
   dom.opening.classList.remove('hidden');
   if (state.prefs.reduceMotion) {
+    dom.credit.classList.add('show');
     dom.lines.forEach((l) => l.classList.add('show'));
     showEnterCue();
     return;
   }
-  dom.lines.forEach((line, i) => setTimeout(() => line.classList.add('show'), 700 + i * 1500));
-  setTimeout(showEnterCue, 700 + dom.lines.length * 1500 + 400);
+  // credit card first — a quiet dedication before the poem
+  setTimeout(() => dom.credit.classList.add('show'), 500);
+  setTimeout(() => dom.credit.classList.add('rest'), 3400);
+  const linesStart = 3400;
+  dom.lines.forEach((line, i) => setTimeout(() => line.classList.add('show'), linesStart + i * 1500));
+  setTimeout(showEnterCue, linesStart + dom.lines.length * 1500 + 400);
 }
 
 function showEnterCue() {
@@ -135,7 +167,13 @@ function enterGarden() {
   dom.wayfinder.classList.remove('hidden');
   buildWayfinder();
   wakeControls();
-  setTimeout(() => whisper(ZONES[1]), 2600);
+  const name = state.playerName || state.prefs.playerName;
+  if (name) {
+    setTimeout(() => whisper({ title: `Welcome, ${name}`, sub: 'The garden has been waiting for you.' }), 2600);
+    setTimeout(() => whisper(ZONES[1]), 8600);
+  } else {
+    setTimeout(() => whisper(ZONES[1]), 2600);
+  }
 }
 
 // ---------------------------------------------------------------- zones
@@ -271,6 +309,7 @@ async function submitMemory(data) {
     await putMemory(rec);
     state.memories.push(rec);
   } catch (e) { announce('There is not enough space on this device to keep that.'); }
+  remoteSave(rec, state.playerName); // also gather into the database
   UI.closeDialog(dom.journal);
   state.dialogOpen = false;
   // ceremony — ease the camera toward the soil, then plant
@@ -304,12 +343,14 @@ function openEdit(rec) {
       Object.assign(rec, data, { updatedAt: new Date().toISOString() });
       const oldEmotion = world.flowers.get(rec.id)?.userData.record.emotion;
       await putMemory(rec);
+      remoteSave(rec, state.playerName);
       if (oldEmotion !== rec.emotion) { world.removeFlower(rec.id); world.addFlowerFromRecord(rec); }
       UI.closeDialog(dom.journal); state.dialogOpen = false;
       announce('Your changes are resting safely here.');
     },
     onDelete: async () => {
       await deleteMemory(rec.id);
+      remoteDelete(rec.id);
       world.removeFlower(rec.id);
       state.memories = state.memories.filter((m) => m.id !== rec.id);
       UI.closeDialog(dom.journal); state.dialogOpen = false;
@@ -331,9 +372,9 @@ function openArchive() {
 function openAccess() {
   state.dialogOpen = true;
   UI.openAccess(dom.access, state.prefs, {
-    onVolume: (bus, v) => { audio.setVolume(bus, v); (state.prefs.vol ||= {})[bus] = v; savePrefs(state.prefs); },
-    onToggle: (key, val) => { state.prefs[key] = val; savePrefs(state.prefs); applyPrefs(state.prefs); },
-    onTextScale: (val) => { state.prefs.textscale = val; savePrefs(state.prefs); applyPrefs(state.prefs); },
+    onVolume: (bus, v) => { audio.setVolume(bus, v); (state.prefs.vol ||= {})[bus] = v; persistPrefs(); },
+    onToggle: (key, val) => { state.prefs[key] = val; persistPrefs(); applyPrefs(state.prefs); },
+    onTextScale: (val) => { state.prefs.textscale = val; persistPrefs(); applyPrefs(state.prefs); },
     onExport: () => doExport(),
     onImport: () => doImport(),
     onClose: () => { UI.closeDialog(dom.access); state.dialogOpen = false; },
@@ -362,6 +403,7 @@ function doImport() {
       state.memories.forEach((m) => world.removeFlower(m.id));
       state.memories = await allMemories();
       state.memories.forEach((m) => world.addFlowerFromRecord(m));
+      state.memories.forEach((m) => remoteSave(m, state.playerName));
       announce('The seed has taken root here.');
     } catch (e) {
       announce('This seed could not be opened. The file or passphrase may not match.');
@@ -404,7 +446,7 @@ function setupInput() {
   // scroll travel
   window.addEventListener('wheel', (e) => {
     if (!state.entered || state.dialogOpen || state.benchMode || state.paused) return;
-    world.nudgeTravel(e.deltaY * 0.00018);
+    world.nudgeTravel(e.deltaY * 0.00024);
   }, { passive: true });
 
   // touch travel
